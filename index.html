@@ -5,231 +5,182 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Xe Tăng 30/4 – Húc cổng Dinh Độc Lập</title>
 
-<!-- GOOGLE FONTS (tải nhanh, font nhẹ) -->
-<link href="https://fonts.googleapis.com/css2?family=Be Vietnam Pro:wght@400;600;800&display=swap"
-      rel="stylesheet">
+<!-- FONTS -->
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
-    :root{
-        --green:#2e8b57;
-        --dark:#1b1b1b;
-        --light:#fafafa;
-        --accent:#d62828;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:'Be Vietnam Pro',sans-serif;}
-    body,html{height:100%;width:100%;background:var(--dark);overflow:hidden;}
-
-    /* ==== START MENU OVERLAY ==== */
-    #menu{
-        position:absolute;inset:0;
-        display:flex;flex-direction:column;justify-content:center;align-items:center;
-        background:url('https://i.imgur.com/KbdJ8HR.jpeg') no-repeat center/cover; /* bóng mờ dinh */
-    }
-    #menu::after{/* tạo lớp phủ mờ */
-        content:'';position:absolute;inset:0;
-        background:rgba(0,0,0,.4);
-    }
-    #menu>div{position:relative;z-index:1;text-align:center;color:var(--light);}
-    #menu h1{
-        font-weight:800;font-size:clamp(2.2rem,6vw,4rem);
-        margin-bottom:1rem;text-transform:uppercase;line-height:1.1;
-    }
-    #startBtn{
-        padding:1rem 3rem;border:none;border-radius:50px;
-        font-size:1.2rem;font-weight:600;
-        background:var(--accent);color:#fff;cursor:pointer;
-        transition:transform .15s;
-    }
-    #startBtn:active{transform:scale(.95);}
-
-    /* ==== GAME CANVAS & HUD ==== */
-    #gameCanvas{display:block;width:100%;height:100%;}
-    /* HUD */
-    #hud{
-        position:absolute;top:10px;left:10px;display:flex;gap:1.25rem;z-index:5;
-        font-size:1rem;color:#fff;font-weight:600;pointer-events:none;
-        text-shadow:0 0 6px #000;
-    }
-    #hud span{min-width:90px}
-
-    /* ==== VIRTUAL BUTTONS FOR MOBILE ==== */
-    #controls{
-        position:absolute;bottom:8vh;width:100%;display:flex;justify-content:center;gap:3rem;
-        pointer-events:none; /* chỉ mở touch cho chính button bên trong */
-        z-index:5;
-    }
-    .vbtn{
-        width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.2);
-        display:flex;align-items:center;justify-content:center;
-        font-size:2rem;color:#fff;font-weight:800;user-select:none;pointer-events:auto;
-        backdrop-filter:blur(5px);
-        transition:background .15s,transform .15s;
-    }
-    .vbtn:active{background:var(--accent);transform:scale(.9);}
-
-    /* ==== ENDGAME POPUP ==== */
-    #endPanel{
-        position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;
-        background:rgba(0,0,0,.65);z-index:10;color:#fff;text-align:center;
-    }
-    #endPanel h2{font-size:2.2rem;margin-bottom:.5rem}
-    #endPanel p{margin-bottom:1.5rem}
-    #replayBtn{
-        padding:.9rem 2.5rem;border:none;border-radius:50px;background:var(--green);
-        color:#fff;font-size:1.1rem;font-weight:600;cursor:pointer;
-    }
-
-    /* ==== SMALL LANDSCAPE DEVICES ==== */
-    @media (min-aspect-ratio:13/9){
-        #controls{bottom:4vh}
-    }
+:root{
+  --green:#2e8b57;
+  --accent:#d62828;
+  --pixel:#f4e04d;
+  --dark:#181818;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body,html{height:100%;width:100%;background:var(--dark);overflow:hidden;font-family:'Be Vietnam Pro',sans-serif;}
+/* ---------- TITLE BAR ---------- */
+#titleBar{
+  position:absolute;top:0;width:100%;text-align:center;z-index:5;
+  font-family:'Press Start 2P',monospace;font-size:clamp(24px,6vw,64px);
+  letter-spacing:1px;color:var(--pixel);text-shadow:4px 4px #000;
+  padding:10px 0;
+}
+/* ---------- GAME CANVAS ---------- */
+#gameCanvas{display:block;width:100%;height:100%;}
+/* BG dinh (placeholder) – tô thẳng lên body nếu chưa render canvas */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:url('https://i.imgur.com/Zh0U9Dx.jpg') center/cover no-repeat; /* ảnh Dinh Độc Lập */
+  filter:brightness(.65);z-index:-2;
+}
+/* ---------- GATE IMAGES (đặt trên canvas để demo) ---------- */
+.gateSprite{
+  position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);
+  width: clamp(220px,40vw,420px);pointer-events:none;
+}
+/* ---------- HUD ---------- */
+#hud{
+  position:absolute;left:10px;top:60px;z-index:6;
+  color:#fff;font-weight:600;text-shadow:0 0 4px #000;font-size:1rem;
+  display:flex;gap:1rem;
+}
+/* ---------- VIRTUAL CONTROLS ---------- */
+#controls{
+  position:absolute;bottom:7vh;width:100%;display:flex;justify-content:center;gap:3rem;z-index:5;
+}
+.vbtn{
+  width:70px;height:70px;border-radius:50%;
+  background:rgba(255,255,255,.25);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Press Start 2P',monospace;font-size:1.7rem;color:#fff;
+  user-select:none;pointer-events:auto;transition:transform .12s,background .12s;
+}
+.vbtn:active{transform:scale(.9);background:var(--accent);}
+@media (min-aspect-ratio:13/9){#controls{bottom:4vh}}
+/* ---------- POP-UP OVERLAY ---------- */
+.popup{
+  position:absolute;inset:0;background:rgba(0,0,0,.7);display:none;
+  flex-direction:column;justify-content:center;align-items:center;z-index:10;color:#fff;text-align:center;
+}
+.popup h2{font-family:'Press Start 2P';font-size:2rem;margin-bottom:1rem;}
+.popup button{
+  margin-top:1.2rem;padding:.9rem 2.8rem;border:none;border-radius:50px;background:var(--green);
+  color:#fff;font-weight:600;font-size:1rem;cursor:pointer;
+}
 </style>
 </head>
 <body>
 
-<!-- =========== START MENU =========== -->
-<section id="menu">
-   <div>
-     <h1>Xe Tăng 30/4</h1>
-     <button id="startBtn">BẮT ĐẦU</button>
-   </div>
-</section>
+<!-- ===== TITLE ===== -->
+<div id="titleBar">XE TĂNG 30/4</div>
 
-<!-- =========== GAME AREA & HUD =========== -->
+<!-- ===== GAME AREA ===== -->
 <canvas id="gameCanvas"></canvas>
+
+<!-- ===== GATE (demo 2 sprite) ===== -->
+<img id="gateIntact" class="gateSprite" src="https://i.imgur.com/H5pvuc8.png" alt="Cổng nguyên">
+<img id="gateBroken" class="gateSprite" src="https://i.imgur.com/ZyWfzZl.png" alt="Cổng vỡ" style="display:none">
+
+<!-- ===== HUD ===== -->
 <div id="hud">
-   <span id="score">Điểm: 0</span>
-   <span id="speed">Tốc độ: 0</span>
+  <span id="score">Điểm: 0</span>
+  <span id="speed">Tốc độ: 0</span>
 </div>
 
-<!-- =========== VIRTUAL CONTROLS =========== -->
+<!-- ===== MOBILE CONTROLS ===== -->
 <div id="controls">
-   <div class="vbtn" id="leftBtn">◀</div>
-   <div class="vbtn" id="upBtn">▲</div>
-   <div class="vbtn" id="rightBtn">▶</div>
+  <div class="vbtn" id="leftBtn">◀</div>
+  <div class="vbtn" id="upBtn">▲</div>
+  <div class="vbtn" id="rightBtn">▶</div>
 </div>
 
-<!-- =========== END GAME PANEL =========== -->
-<section id="endPanel">
-   <h2>Chiến thắng!</h2>
-   <p id="finalMsg"></p>
-   <button id="replayBtn">Chơi lại</button>
+<!-- ===== POP-UPS ===== -->
+<section id="menu" class="popup" style="display:flex">
+  <h2>BẮT ĐẦU</h2>
+  <button id="startBtn">CHƠI NGAY</button>
 </section>
 
-<!-- =========== GAME LOGIC =========== -->
+<section id="endGame" class="popup">
+  <h2 id="endTitle">CHIẾN THẮNG!</h2>
+  <p id="finalMsg"></p>
+  <button id="replayBtn">CHƠI LẠI</button>
+</section>
+
+<!-- ===== GAME LOGIC (dán code JS xe tăng ở đây) ===== -->
 <script>
-/* ===========================================================
-   1.  CÁC BIẾN DÙNG CHUNG
-   =========================================================== */
-const canvas   = document.getElementById('gameCanvas'),
-      ctx       = canvas.getContext('2d'),
-      menu      = document.getElementById('menu'),
+/* ---------- BIẾN CƠ BẢN ---------- */
+const canvas = document.getElementById('gameCanvas'),
+      ctx    = canvas.getContext('2d'),
+      menu   = document.getElementById('menu'),
+      endUI  = document.getElementById('endGame'),
       startBtn  = document.getElementById('startBtn'),
-      endPanel  = document.getElementById('endPanel'),
       replayBtn = document.getElementById('replayBtn'),
       scoreEl   = document.getElementById('score'),
       speedEl   = document.getElementById('speed'),
-      controls  = {
-          left :document.getElementById('leftBtn'),
-          up   :document.getElementById('upBtn'),
-          right:document.getElementById('rightBtn')
-      };
+      gateIntact= document.getElementById('gateIntact'),
+      gateBroken= document.getElementById('gateBroken'),
+      keys  ={left:false,right:false,up:false};
 
-let W,H,gameRunning=false;
+let W,H,playing=false;
 
-/* ===========================================================
-   2.  HÀM RESIZE CANVAS
-   =========================================================== */
-function resize(){
-   W=canvas.width = window.innerWidth;
-   H=canvas.height= window.innerHeight;
+/* ---------- RESIZE ---------- */
+function fit(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight;}
+fit(); addEventListener('resize',fit);
+
+/* ---------- INPUT ---------- */
+const btnMap = {left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp'};
+Object.entries(btnMap).forEach(([id,key])=>{
+   const el=document.getElementById(id+'Btn');
+   el.addEventListener('touchstart',e=>{e.preventDefault();keys[id]=true;});
+   el.addEventListener('touchend',  e=>{e.preventDefault();keys[id]=false;});
+});
+addEventListener('keydown',e=>{if(e.key in btnMap) keys[btnMap[e.key]]=true;});
+addEventListener('keyup',e=>{if(e.key in btnMap) keys[btnMap[e.key]]=false;});
+
+/* ---------- GAME OBJECT DEMO (thay bằng thuật toán thật) ---------- */
+let x=0,speed=0,score=0;
+function resetGame(){
+  x=speed=score=0;
+  gateIntact.style.display='block';
+  gateBroken.style.display='none';
 }
-resize();
-window.addEventListener('resize',resize);
-
-/* ===========================================================
-   3.  INPUT – MOBILE & KEYBOARD
-   =========================================================== */
-const keys={left:false,right:false,up:false};
-
-Object.entries(controls).forEach(([name,btn])=>{
-   btn.addEventListener('touchstart', e=>{e.preventDefault();keys[name]=true;});
-   btn.addEventListener('touchend',   e=>{e.preventDefault();keys[name]=false;});
-});
-window.addEventListener('keydown',e=>{
-   if(e.key==='ArrowLeft') keys.left=true;
-   if(e.key==='ArrowRight') keys.right=true;
-   if(e.key==='ArrowUp') keys.up=true;
-});
-window.addEventListener('keyup',e=>{
-   if(e.key==='ArrowLeft') keys.left=false;
-   if(e.key==='ArrowRight') keys.right=false;
-   if(e.key==='ArrowUp') keys.up=false;
-});
-
-/* ===========================================================
-   4.  --- GAME OBJECTS & LOOP ---
-   -----------------------------------------------------------
-   👉 Bạn dán/di chuyển code game cũ ở đây (Tank, Gate, update,
-      draw, loop, collision...) hoặc thay bằng import module JS.
-   =========================================================== */
-
-// -------- DEMO DUMMY (xóa khi gắn code thật) -------------
-let dummyX=0,speed=0,score=0;
 function update(){
-  if(!gameRunning) return;
-  // mô phỏng tăng điểm & tốc độ
-  if(keys.up) speed=Math.min(speed+0.1,8);
-  else speed=Math.max(speed-0.2,0);
-  dummyX+=speed;
-  score=Math.floor(dummyX/10);
-  // HUD
+  if(!playing) return;
+  if(keys.up) speed=Math.min(speed+0.12,8);
+  else speed=Math.max(speed-0.18,0);
+  x+=speed;
+  score=Math.floor(x*0.6);
   scoreEl.textContent='Điểm: '+score;
   speedEl.textContent='Tốc độ: '+speed.toFixed(1);
-  // thắng game demo
-  if(score>=200){
-     showEnd('Bạn đã húc sập cổng!\nĐiểm: '+score);
+  if(score>300){ // thắng demo
+     gateIntact.style.display='none';
+     gateBroken.style.display='block';
+     finish(true);
   }
 }
 function draw(){
-  ctx.fillStyle='#87ceeb';
-  ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#2e8b57';
-  ctx.fillRect(dummyX%W, H*0.7,120,60);
+  ctx.clearRect(0,0,W,H);
+  /* tô đường & xe tăng sơ bộ */
+  ctx.fillStyle='#c2b280';
+  ctx.fillRect(0,H*0.75,W, H*0.25);
+  ctx.fillStyle='var(--green)';
+  ctx.fillRect(W*0.2, H*0.68,120,60);
 }
-function loop(){
-  update(); draw();
-  requestAnimationFrame(loop);
-}
-// -----------------------------------------------------------
+function loop(){update();draw();requestAnimationFrame(loop);} loop();
 
-/* ===========================================================
-   5.  UI FLOW: START, PLAY, END
-   =========================================================== */
-function startGame(){
-   menu.style.display='none';
-   endPanel.style.display='none';
-   gameRunning=true;
-   // reset
-   dummyX=0;speed=0;score=0;
+/* ---------- FLOW ---------- */
+function start(){
+  menu.style.display='none'; endUI.style.display='none';
+  playing=true; resetGame();
 }
-
-function showEnd(msg){
-   gameRunning=false;
-   document.getElementById('finalMsg').innerText=msg;
-   endPanel.style.display='flex';
+function finish(win){
+  playing=false;
+  document.getElementById('endTitle').textContent = win?'Địt Mẹ 3 Que!':'Húc Không Sập Cổng? Gà vl!';
+  document.getElementById('finalMsg').textContent = `Điểm của bạn: ${score}`;
+  endUI.style.display='flex';
 }
 
-/* ===========================================================
-   6.  BUTTON EVENTS
-   =========================================================== */
-startBtn.addEventListener('click',startGame);
-replayBtn.addEventListener('click',startGame);
-
-/* ===========================================================
-   7.  START RENDER LOOP
-   =========================================================== */
-loop();
+/* ---------- BTN EVENTS ---------- */
+startBtn.onclick=start; replayBtn.onclick=start;
 </script>
 </body>
 </html>
