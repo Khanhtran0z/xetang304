@@ -1,60 +1,235 @@
-<!DOCTYPE html><html lang="vi">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Xe Tăng 30/4</title>
-  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
-    canvas { display: block; }
-    #controls { position: absolute; bottom: 10px; width: 100%; display: flex; justify-content: center; }
-    .btn { width: 60px; height: 60px; margin: 0 20px; background: rgba(255,255,255,0.7); border-radius: 50%; font-size: 30px; display: flex; align-items: center; justify-content: center; user-select: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Xe Tăng 30/4 – Húc cổng Dinh Độc Lập</title>
+
+<!-- GOOGLE FONTS (tải nhanh, font nhẹ) -->
+<link href="https://fonts.googleapis.com/css2?family=Be Vietnam Pro:wght@400;600;800&display=swap"
+      rel="stylesheet">
+
+<style>
+    :root{
+        --green:#2e8b57;
+        --dark:#1b1b1b;
+        --light:#fafafa;
+        --accent:#d62828;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Be Vietnam Pro',sans-serif;}
+    body,html{height:100%;width:100%;background:var(--dark);overflow:hidden;}
+
+    /* ==== START MENU OVERLAY ==== */
+    #menu{
+        position:absolute;inset:0;
+        display:flex;flex-direction:column;justify-content:center;align-items:center;
+        background:url('https://i.imgur.com/KbdJ8HR.jpeg') no-repeat center/cover; /* bóng mờ dinh */
+    }
+    #menu::after{/* tạo lớp phủ mờ */
+        content:'';position:absolute;inset:0;
+        background:rgba(0,0,0,.4);
+    }
+    #menu>div{position:relative;z-index:1;text-align:center;color:var(--light);}
+    #menu h1{
+        font-weight:800;font-size:clamp(2.2rem,6vw,4rem);
+        margin-bottom:1rem;text-transform:uppercase;line-height:1.1;
+    }
+    #startBtn{
+        padding:1rem 3rem;border:none;border-radius:50px;
+        font-size:1.2rem;font-weight:600;
+        background:var(--accent);color:#fff;cursor:pointer;
+        transition:transform .15s;
+    }
+    #startBtn:active{transform:scale(.95);}
+
+    /* ==== GAME CANVAS & HUD ==== */
+    #gameCanvas{display:block;width:100%;height:100%;}
+    /* HUD */
+    #hud{
+        position:absolute;top:10px;left:10px;display:flex;gap:1.25rem;z-index:5;
+        font-size:1rem;color:#fff;font-weight:600;pointer-events:none;
+        text-shadow:0 0 6px #000;
+    }
+    #hud span{min-width:90px}
+
+    /* ==== VIRTUAL BUTTONS FOR MOBILE ==== */
+    #controls{
+        position:absolute;bottom:8vh;width:100%;display:flex;justify-content:center;gap:3rem;
+        pointer-events:none; /* chỉ mở touch cho chính button bên trong */
+        z-index:5;
+    }
+    .vbtn{
+        width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.2);
+        display:flex;align-items:center;justify-content:center;
+        font-size:2rem;color:#fff;font-weight:800;user-select:none;pointer-events:auto;
+        backdrop-filter:blur(5px);
+        transition:background .15s,transform .15s;
+    }
+    .vbtn:active{background:var(--accent);transform:scale(.9);}
+
+    /* ==== ENDGAME POPUP ==== */
+    #endPanel{
+        position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;
+        background:rgba(0,0,0,.65);z-index:10;color:#fff;text-align:center;
+    }
+    #endPanel h2{font-size:2.2rem;margin-bottom:.5rem}
+    #endPanel p{margin-bottom:1.5rem}
+    #replayBtn{
+        padding:.9rem 2.5rem;border:none;border-radius:50px;background:var(--green);
+        color:#fff;font-size:1.1rem;font-weight:600;cursor:pointer;
+    }
+
+    /* ==== SMALL LANDSCAPE DEVICES ==== */
+    @media (min-aspect-ratio:13/9){
+        #controls{bottom:4vh}
+    }
+</style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <div id="controls">
-    <div class="btn" id="leftBtn">&#9664;</div>
-    <div class="btn" id="upBtn">&#9650;</div>
-    <div class="btn" id="rightBtn">&#9654;</div>
-  </div>
+
+<!-- =========== START MENU =========== -->
+<section id="menu">
+   <div>
+     <h1>Xe Tăng 30/4</h1>
+     <button id="startBtn">BẮT ĐẦU</button>
+   </div>
+</section>
+
+<!-- =========== GAME AREA & HUD =========== -->
+<canvas id="gameCanvas"></canvas>
+<div id="hud">
+   <span id="score">Điểm: 0</span>
+   <span id="speed">Tốc độ: 0</span>
+</div>
+
+<!-- =========== VIRTUAL CONTROLS =========== -->
+<div id="controls">
+   <div class="vbtn" id="leftBtn">◀</div>
+   <div class="vbtn" id="upBtn">▲</div>
+   <div class="vbtn" id="rightBtn">▶</div>
+</div>
+
+<!-- =========== END GAME PANEL =========== -->
+<section id="endPanel">
+   <h2>Chiến thắng!</h2>
+   <p id="finalMsg"></p>
+   <button id="replayBtn">Chơi lại</button>
+</section>
+
+<!-- =========== GAME LOGIC =========== -->
 <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  let W = canvas.width = window.innerWidth;
-  let H = canvas.height = window.innerHeight;window.addEventListener('resize', () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; // recreate gradient bgGradient = ctx.createLinearGradient(0, 0, 0, H); bgGradient.addColorStop(0, '#87CEEB'); bgGradient.addColorStop(1, '#FFFFFF'); });
+/* ===========================================================
+   1.  CÁC BIẾN DÙNG CHUNG
+   =========================================================== */
+const canvas   = document.getElementById('gameCanvas'),
+      ctx       = canvas.getContext('2d'),
+      menu      = document.getElementById('menu'),
+      startBtn  = document.getElementById('startBtn'),
+      endPanel  = document.getElementById('endPanel'),
+      replayBtn = document.getElementById('replayBtn'),
+      scoreEl   = document.getElementById('score'),
+      speedEl   = document.getElementById('speed'),
+      controls  = {
+          left :document.getElementById('leftBtn'),
+          up   :document.getElementById('upBtn'),
+          right:document.getElementById('rightBtn')
+      };
 
-let bgGradient = ctx.createLinearGradient(0, 0, 0, H); bgGradient.addColorStop(0, '#87CEEB'); bgGradient.addColorStop(1, '#FFFFFF');
+let W,H,gameRunning=false;
 
-// Gate const gate = { x: W / 2 - 75, y: H / 2 - 150, width: 150, height: 300, broken: false };
+/* ===========================================================
+   2.  HÀM RESIZE CANVAS
+   =========================================================== */
+function resize(){
+   W=canvas.width = window.innerWidth;
+   H=canvas.height= window.innerHeight;
+}
+resize();
+window.addEventListener('resize',resize);
 
-// Tank const tank = { x: 20, y: H - 80, width: 100, height: 50, speed: 0, maxSpeed: 6, accel: 0.3 };
+/* ===========================================================
+   3.  INPUT – MOBILE & KEYBOARD
+   =========================================================== */
+const keys={left:false,right:false,up:false};
 
-const keys = { left: false, right: false, up: false };
+Object.entries(controls).forEach(([name,btn])=>{
+   btn.addEventListener('touchstart', e=>{e.preventDefault();keys[name]=true;});
+   btn.addEventListener('touchend',   e=>{e.preventDefault();keys[name]=false;});
+});
+window.addEventListener('keydown',e=>{
+   if(e.key==='ArrowLeft') keys.left=true;
+   if(e.key==='ArrowRight') keys.right=true;
+   if(e.key==='ArrowUp') keys.up=true;
+});
+window.addEventListener('keyup',e=>{
+   if(e.key==='ArrowLeft') keys.left=false;
+   if(e.key==='ArrowRight') keys.right=false;
+   if(e.key==='ArrowUp') keys.up=false;
+});
 
-// Touch controls document.getElementById('leftBtn').addEventListener('touchstart', () => { keys.left = true; }); document.getElementById('leftBtn').addEventListener('touchend', () => { keys.left = false; }); document.getElementById('rightBtn').addEventListener('touchstart', () => { keys.right = true; }); document.getElementById('rightBtn').addEventListener('touchend', () => { keys.right = false; }); document.getElementById('upBtn').addEventListener('touchstart', () => { keys.up = true; }); document.getElementById('upBtn').addEventListener('touchend', () => { keys.up = false; });
+/* ===========================================================
+   4.  --- GAME OBJECTS & LOOP ---
+   -----------------------------------------------------------
+   👉 Bạn dán/di chuyển code game cũ ở đây (Tank, Gate, update,
+      draw, loop, collision...) hoặc thay bằng import module JS.
+   =========================================================== */
 
-// Keyboard controls window.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (e.key === 'ArrowUp') keys.up = true; }); window.addEventListener('keyup', (e) => { if (e.key === 'ArrowLeft') keys.left = false; if (e.key === 'ArrowRight') keys.right = false; if (e.key === 'ArrowUp') keys.up = false; });
+// -------- DEMO DUMMY (xóa khi gắn code thật) -------------
+let dummyX=0,speed=0,score=0;
+function update(){
+  if(!gameRunning) return;
+  // mô phỏng tăng điểm & tốc độ
+  if(keys.up) speed=Math.min(speed+0.1,8);
+  else speed=Math.max(speed-0.2,0);
+  dummyX+=speed;
+  score=Math.floor(dummyX/10);
+  // HUD
+  scoreEl.textContent='Điểm: '+score;
+  speedEl.textContent='Tốc độ: '+speed.toFixed(1);
+  // thắng game demo
+  if(score>=200){
+     showEnd('Bạn đã húc sập cổng!\nĐiểm: '+score);
+  }
+}
+function draw(){
+  ctx.fillStyle='#87ceeb';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#2e8b57';
+  ctx.fillRect(dummyX%W, H*0.7,120,60);
+}
+function loop(){
+  update(); draw();
+  requestAnimationFrame(loop);
+}
+// -----------------------------------------------------------
 
-function update() { if (keys.up) tank.speed += tank.accel; else tank.speed -= tank.accel; tank.speed = Math.max(0, Math.min(tank.speed, tank.maxSpeed)); if (keys.right) tank.x += tank.speed; if (keys.left) tank.x -= tank.speed;
-
-// Boundaries
-if (tank.x < 0) tank.x = 0;
-if (tank.x + tank.width > W) tank.x = W - tank.width;
-
-// Collision
-if (!gate.broken && tank.x + tank.width > gate.x && tank.y < gate.y + gate.height) gate.broken = true;
-
+/* ===========================================================
+   5.  UI FLOW: START, PLAY, END
+   =========================================================== */
+function startGame(){
+   menu.style.display='none';
+   endPanel.style.display='none';
+   gameRunning=true;
+   // reset
+   dummyX=0;speed=0;score=0;
 }
 
-function drawGate() { ctx.fillStyle = gate.broken ? 'rgba(200,200,200,0.5)' : '#FFF'; // pillars ctx.fillRect(gate.x, gate.y, gate.width, gate.height); // arch ctx.beginPath(); ctx.arc(gate.x + gate.width / 2, gate.y, gate.width / 2, Math.PI, 0); ctx.fill(); }
+function showEnd(msg){
+   gameRunning=false;
+   document.getElementById('finalMsg').innerText=msg;
+   endPanel.style.display='flex';
+}
 
-function drawTank() { ctx.save(); ctx.translate(tank.x + tank.width / 2, tank.y + tank.height / 2); ctx.fillStyle = '#2E8B57'; ctx.fillRect(-tank.width / 2, -tank.height / 2, tank.width, tank.height); // turret ctx.beginPath(); ctx.arc(0, -tank.height / 2, 20, 0, 2 * Math.PI); ctx.fillStyle = '#556B2F'; ctx.fill(); // barrel ctx.fillRect(-7, -tank.height / 2 - 40, 14, 40); ctx.restore(); }
+/* ===========================================================
+   6.  BUTTON EVENTS
+   =========================================================== */
+startBtn.addEventListener('click',startGame);
+replayBtn.addEventListener('click',startGame);
 
-function draw() { ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, W, H); drawGate(); drawTank(); if (gate.broken) { ctx.fillStyle = 'rgba(255,0,0,0.7)'; ctx.font = 'bold 50px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Chúc mừng 30/4', W / 2, H / 4); } }
-
-function loop() { update(); draw(); requestAnimationFrame(loop); }
-
-loop(); </script>
-
+/* ===========================================================
+   7.  START RENDER LOOP
+   =========================================================== */
+loop();
+</script>
 </body>
 </html>
